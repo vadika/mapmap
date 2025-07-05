@@ -7,8 +7,9 @@ Web Mercator and coordinate transformation endpoints.
 """
 
 from pydantic_settings import BaseSettings
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import json
+import os
 
 
 class WMTSEndpoint(BaseSettings):
@@ -47,6 +48,25 @@ class Settings(BaseSettings):
     
     LOG_LEVEL: str = "INFO"
     
+    # Security settings
+    ALLOWED_ORIGINS: str = "*"
+    ALLOWED_HOSTS: str = "*"
+    SECRET_KEY: Optional[str] = None
+    
+    # Performance settings
+    WORKERS: int = 1
+    MAX_CONNECTIONS: int = 100
+    KEEPALIVE_TIMEOUT: int = 5
+    
+    # Monitoring
+    ENABLE_METRICS: bool = False
+    METRICS_PORT: int = 9090
+    
+    # Rate limiting
+    RATE_LIMIT_ENABLED: bool = False
+    RATE_LIMIT_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW: int = 3600
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -65,6 +85,18 @@ class Settings(BaseSettings):
             raise ValueError(f"Unknown endpoint: {endpoint_name}")
         
         return WMTSEndpoint(**endpoint_data)
+    
+    def get_allowed_origins(self) -> List[str]:
+        """Parse ALLOWED_ORIGINS into a list"""
+        if self.ALLOWED_ORIGINS == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+    
+    def get_allowed_hosts(self) -> List[str]:
+        """Parse ALLOWED_HOSTS into a list"""
+        if self.ALLOWED_HOSTS == "*":
+            return ["*"]
+        return [host.strip() for host in self.ALLOWED_HOSTS.split(",")]
 
 
 settings = Settings()

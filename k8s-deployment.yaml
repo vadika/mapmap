@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mapmap-config
+  namespace: default
+data:
+  LOG_LEVEL: "WARNING"
+  CACHE_SIZE: "10000"
+  CACHE_TTL: "7200"
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS: "1000"
+  ENABLE_METRICS: "true"
+  DEFAULT_ENDPOINT: "latvia_webmercator"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mapmap-secrets
+  namespace: default
+type: Opaque
+stringData:
+  SECRET_KEY: "your-secret-key-here"
+  ALLOWED_ORIGINS: "https://yourdomain.com"
+  ALLOWED_HOSTS: "yourdomain.com"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mapmap
+  namespace: default
+  labels:
+    app: mapmap
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mapmap
+  template:
+    metadata:
+      labels:
+        app: mapmap
+    spec:
+      containers:
+      - name: mapmap
+        image: mapmap:production
+        ports:
+        - containerPort: 8000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: mapmap-config
+        - secretRef:
+            name: mapmap-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mapmap-service
+  namespace: default
+spec:
+  selector:
+    app: mapmap
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mapmap-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://yourdomain.com"
+spec:
+  tls:
+  - hosts:
+    - api.yourdomain.com
+    secretName: mapmap-tls
+  rules:
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mapmap-service
+            port:
+              number: 80
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: mapmap-metrics
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: mapmap
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mapmap-pdb
+  namespace: default
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: mapmap
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mapmap-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mapmap
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
