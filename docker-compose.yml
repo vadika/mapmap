@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  mapmap:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - WMTS_BASE_URL=${WMTS_BASE_URL:-https://lvmgeoproxy01.lvm.lv/wmts_b6948e305fb9446985a41b2aee54e07d/wmts}
+      - WMTS_LAYER=${WMTS_LAYER:-public:Topo10DTM}
+      - WMTS_APP_ID=${WMTS_APP_ID:-lvmgeo.lvm.lv/}
+      - CACHE_SIZE=${CACHE_SIZE:-1000}
+      - CACHE_TTL=${CACHE_TTL:-3600}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
