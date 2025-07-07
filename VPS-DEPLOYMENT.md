@@ -14,7 +14,15 @@ Deploy MapMap Tile Proxy on any VPS using cloud-init for automated setup.
 - Minimum: 1 vCPU, 1GB RAM, 20GB storage
 - Recommended: 2 vCPU, 2GB RAM, 40GB storage
 
-### 2. Cloud-Init Deployment
+### 2. Repository Scripts
+
+All deployment scripts are now in the `scripts/` directory:
+- `init-server.sh` - Main server initialization
+- `deploy-mapmap.sh` - Deploy updates from git
+- `setup-ssl.sh` - Configure SSL certificates
+- `monitor-mapmap.sh` - Check service status
+
+### 3. Cloud-Init Deployment
 
 #### Option A: Direct cloud-init (Most Providers)
 

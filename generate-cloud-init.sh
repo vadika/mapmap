@@ -38,10 +38,10 @@ cp cloud-init.template.yaml cloud-init.yaml
 # Replace SSH key placeholder with actual key
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    sed -i '' "s|ssh-ed25519.*|$SSH_KEY|" cloud-init.yaml
+    sed -i '' "s|ssh-ed25519.*vadikas@c57bl6|$SSH_KEY|" cloud-init.yaml
 else
     # Linux
-    sed -i "s|ssh-ed25519.*|$SSH_KEY|" cloud-init.yaml
+    sed -i "s|ssh-ed25519.*vadikas@c57bl6|$SSH_KEY|" cloud-init.yaml
 fi
 
 echo -e "${GREEN}✅ Generated cloud-init.yaml with your SSH key${NC}"
