@@ -19,7 +19,6 @@ Deploy MapMap Tile Proxy on any VPS using cloud-init for automated setup.
 All deployment scripts are now in the `scripts/` directory:
 - `init-server.sh` - Main server initialization
 - `deploy-mapmap.sh` - Deploy updates from git
-- `setup-ssl.sh` - Configure SSL certificates
 - `monitor-mapmap.sh` - Check service status
 
 ### 3. Cloud-Init Deployment
@@ -76,11 +75,7 @@ ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 SECRET_KEY=your-secure-random-string-here
 ```
 
-#### Setup SSL Certificate
-```bash
-# Run SSL setup script (replace with your domain and email)
-sudo -u mapmap /home/mapmap/setup-ssl.sh yourdomain.com admin@yourdomain.com
-```
+
 
 #### Enable Auto-Start
 ```bash
@@ -143,7 +138,7 @@ curl https://yourdomain.com/tiles/10/500/400
 
 1. Launch Instance → Ubuntu 22.04 AMI
 2. Configure Instance → Advanced → User Data → Paste cloud-init.yaml
-3. Add Security Group (ports 22, 80, 443)
+3. Add Security Group (ports 22, 8111)
 4. Select Key Pair
 5. Launch
 
@@ -172,8 +167,7 @@ az vm create \
 
 ### Firewall Rules (Applied automatically)
 - Port 22 (SSH) - Open
-- Port 80 (HTTP) - Open (redirects to HTTPS)
-- Port 443 (HTTPS) - Open
+- Port 8111 (HTTP) - Open
 - All other ports - Closed
 
 ### Additional Security
@@ -265,14 +259,7 @@ For high-traffic deployments:
    sudo -u mapmap docker-compose -f /home/mapmap/mapmap/docker-compose.production.yml logs
    ```
 
-2. **SSL certificate issues:**
-   ```bash
-   # Check certificate status
-   sudo certbot certificates
-   
-   # Renew certificate
-   sudo certbot renew
-   ```
+
 
 3. **High memory usage:**
    ```bash
@@ -294,7 +281,6 @@ For high-traffic deployments:
 
 - **Logs:** Check `/home/mapmap/mapmap/logs/`
 - **Configuration:** `/home/mapmap/mapmap/.env`
-- **SSL:** `/etc/letsencrypt/live/yourdomain.com/`
 - **Documentation:** `/home/mapmap/mapmap/DEPLOYMENT.md`
 
 ## Cost Optimization

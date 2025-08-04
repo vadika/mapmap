@@ -16,8 +16,6 @@ packages:
   - htop
   - fail2ban
   - ufw
-  - certbot
-  - python3-certbot-nginx
 
 # Create mapmap user
 users:
@@ -34,8 +32,7 @@ runcmd:
   - ufw default deny incoming
   - ufw default allow outgoing
   - ufw allow ssh
-  - ufw allow 80/tcp
-  - ufw allow 443/tcp
+  - ufw allow 8111/tcp
   - ufw --force enable
 
   # Install Docker
@@ -63,7 +60,6 @@ runcmd:
 
   # Create directories
   - mkdir -p /home/mapmap/mapmap/logs
-  - mkdir -p /home/mapmap/mapmap/ssl
   - chown -R mapmap:mapmap /home/mapmap/mapmap
 
   # Configure fail2ban
@@ -294,49 +290,7 @@ write_files:
           exit 1
       fi
 
-  # SSL certificate setup script
-  - path: /home/mapmap/setup-ssl.sh
-    owner: mapmap:mapmap
-    permissions: '0755'
-    content: |
-      #!/bin/bash
-      set -e
-
-      DOMAIN=${1:-yourdomain.com}
-      EMAIL=${2:-admin@yourdomain.com}
-
-      echo "🔒 Setting up SSL certificate for $DOMAIN..."
-
-      # Stop nginx container temporarily
-      cd /home/mapmap/mapmap
-      docker-compose -f docker-compose.production.yml stop nginx
-
-      # Get Let's Encrypt certificate
-      certbot certonly --standalone \
-        --email $EMAIL \
-        --agree-tos \
-        --no-eff-email \
-        -d $DOMAIN \
-        -d www.$DOMAIN
-
-      # Copy certificates to ssl directory
-      cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem /home/mapmap/mapmap/ssl/cert.pem
-      cp /etc/letsencrypt/live/$DOMAIN/privkey.pem /home/mapmap/mapmap/ssl/key.pem
-      chown mapmap:mapmap /home/mapmap/mapmap/ssl/*
-
-      # Update nginx configuration
-      sed -i "s/yourdomain.com/$DOMAIN/g" /home/mapmap/mapmap/nginx-ssl.conf
-      cp /home/mapmap/mapmap/nginx-ssl.conf /home/mapmap/mapmap/nginx.conf
-
-      # Restart services with SSL
-      docker-compose -f docker-compose.production.yml up -d
-
-      echo "✅ SSL certificate installed successfully!"
-      echo "🌐 Service available at: https://$DOMAIN"
-
-      # Setup auto-renewal
-      echo "⏰ Setting up certificate auto-renewal..."
-      (crontab -l 2>/dev/null; echo "0 12 * * * /usr/bin/certbot renew --quiet --deploy-hook 'cd /home/mapmap/mapmap && docker-compose -f docker-compose.production.yml restart nginx'") | crontab -
+  
 
   # Monitoring script
   - path: /home/mapmap/monitor-mapmap.sh
@@ -373,9 +327,8 @@ final_message: |
   
   Next steps:
   1. Update /home/mapmap/mapmap/.env with your domain and secret key
-  2. Run SSL setup: sudo -u mapmap /home/mapmap/setup-ssl.sh yourdomain.com your@email.com
-  3. Enable systemd service: sudo systemctl enable mapmap
-  4. Monitor service: sudo -u mapmap /home/mapmap/monitor-mapmap.sh
+  2. Enable systemd service: sudo systemctl enable mapmap
+  3. Monitor service: sudo -u mapmap /home/mapmap/monitor-mapmap.sh
   
   Service endpoints:
   - Health: http://your-server-ip:8000/health

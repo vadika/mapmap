@@ -14,8 +14,7 @@ apt-get upgrade -y
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow ssh
-ufw allow 80/tcp
-ufw allow 443/tcp
+ufw allow 8111/tcp
 ufw --force enable
 
 # Install Docker
@@ -48,8 +47,8 @@ if [ ! -f ".env" ]; then
 fi
 
 # Create directories
-mkdir -p logs ssl
-chown -R mapmap:mapmap logs ssl
+mkdir -p logs
+chown -R mapmap:mapmap logs
 
 # Make scripts executable
 chmod +x scripts/*.sh
@@ -66,4 +65,3 @@ systemctl start mapmap
 echo "✅ Server initialization complete!"
 echo "📝 Next steps:"
 echo "   1. Update /home/mapmap/mapmap/.env with your settings"
-echo "   2. Run: sudo -u mapmap /home/mapmap/mapmap/scripts/setup-ssl.sh yourdomain.com"
