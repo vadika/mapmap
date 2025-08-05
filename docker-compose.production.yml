@@ -33,6 +33,7 @@ services:
           cpus: '0.25'
     networks:
       - mapmap-network
+      - shared-proxy-net
 
   # Optional: Redis for distributed caching
   redis:
@@ -44,6 +45,7 @@ services:
       - redis_data:/data
     networks:
       - mapmap-network
+      - shared-proxy-net
     deploy:
       resources:
         limits:
@@ -64,6 +66,7 @@ services:
       - mapmap
     networks:
       - mapmap-network
+      - shared-proxy-net
     deploy:
       resources:
         limits:
@@ -77,3 +80,5 @@ volumes:
 networks:
   mapmap-network:
     driver: bridge
+  shared-proxy-net:
+    external: true

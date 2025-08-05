@@ -13,3 +13,8 @@ services:
       - CACHE_TTL=${CACHE_TTL:-3600}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
+    networks:
+      - shared-proxy-net
+networks:
+  shared-proxy-net:
+    external: true
